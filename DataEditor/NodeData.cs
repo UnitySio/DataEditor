@@ -9,6 +9,10 @@ namespace DataEditor
     public enum DataType
     {
         None,
+        Group,
+        Int,
+        Float,
+        String,
         Image,
         Sound
     }
@@ -17,5 +21,6 @@ namespace DataEditor
     {
         public byte[] Data { get; set; }
         public DataType Type { get; set; }
+        public string Value { get; set; }
     }
 }

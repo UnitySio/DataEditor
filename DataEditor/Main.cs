@@ -18,11 +18,21 @@ namespace DataEditor
         {
             InitializeComponent();
 
-            treeView1.AllowDrop = true;
-            treeView1.DragEnter += new DragEventHandler(treeView1_DragEnter);
-            treeView1.DragOver += new DragEventHandler(treeView1_DragOver);
-            treeView1.DragDrop += new DragEventHandler(treeView1_DragDrop);
-            treeView1.AfterSelect += new TreeViewEventHandler(treeView1_AfterSelect);
+            tv_main.AllowDrop = true;
+            tv_main.DragEnter += tv_main_DragEnter;
+            tv_main.DragOver += tv_main_DragOver;
+            tv_main.DragDrop += tv_main_DragDrop;
+            tv_main.AfterSelect += tv_main_AfterSelect;
+        }
+
+        private void 저장ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void 불러오기ToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
         }
 
         private void 종료ToolStripMenuItem_Click(object sender, EventArgs e)
@@ -30,7 +40,7 @@ namespace DataEditor
             Application.Exit();
         }
 
-        private void treeView1_DragEnter(object sender, DragEventArgs e)
+        private void tv_main_DragEnter(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
             {
@@ -42,14 +52,14 @@ namespace DataEditor
             }
         }
 
-        private void treeView1_DragOver(object sender, DragEventArgs e)
+        private void tv_main_DragOver(object sender, DragEventArgs e)
         {
-            Point targetPoint = treeView1.PointToClient(new Point(e.X, e.Y));
-            TreeNode targetNode = treeView1.GetNodeAt(targetPoint);
+            Point targetPoint = tv_main.PointToClient(new Point(e.X, e.Y));
+            TreeNode targetNode = tv_main.GetNodeAt(targetPoint);
             if (targetNode != null)
             {
                 e.Effect = DragDropEffects.Copy;
-                treeView1.SelectedNode = targetNode;
+                tv_main.SelectedNode = targetNode;
             }
             else
             {
@@ -57,10 +67,17 @@ namespace DataEditor
             }
         }
 
-        private void treeView1_DragDrop(object sender, DragEventArgs e)
+        private void tv_main_DragDrop(object sender, DragEventArgs e)
         {
-            Point dropPoint = treeView1.PointToClient(new Point(e.X, e.Y));
-            TreeNode targetNode = treeView1.GetNodeAt(dropPoint);
+            Point dropPoint = tv_main.PointToClient(new Point(e.X, e.Y));
+            TreeNode targetNode = tv_main.GetNodeAt(dropPoint);
+
+            var nodeType = ((NodeData)targetNode.Tag).Type;
+            if (nodeType != DataType.Group)
+            {
+                MessageBox.Show("그룹에만 추가할 수 있습니다.");
+                return;
+            }
 
             List<TreeNode> nodes = new List<TreeNode>();
 
@@ -99,16 +116,11 @@ namespace DataEditor
             }
         }
 
-        private void treeView1_AfterSelect(object sender, TreeViewEventArgs e)
+        private void tv_main_AfterSelect(object sender, TreeViewEventArgs e)
         {
             var node = e.Node;
-            if (node.Tag == null)
-            {
-                pictureBox1.Hide();
-                return;
-            }
-
             var data = (NodeData)node.Tag;
+
             if (data.Type == DataType.Image)
             {
                 pictureBox1.Show();
@@ -119,27 +131,43 @@ namespace DataEditor
                     pictureBox1.SizeMode = PictureBoxSizeMode.Zoom;
                 }
             }
+            else
+            {
+                pictureBox1.Hide();
+            }
         }
 
         private void 노드추가ToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var selectedNode = treeView1.SelectedNode;
+            var dialog = new InputDataDialog("노드 추가");
+            bool isOK = dialog.ShowDialog() == DialogResult.OK;
+            bool isValue = !string.IsNullOrEmpty(dialog.Value);
+
+            TreeNode node = new TreeNode(dialog.Name + (isValue ? " : " + dialog.Value : ""))
+            {
+                Tag = new NodeData { Type = dialog.Group }
+            };
+
+            var selectedNode = tv_main.SelectedNode;
             if (selectedNode == null)
             {
-                InputDialog inputDialog = new InputDialog("노드 추가", "추가할 노드의 이름을 입력해 주세요.");
-                if (inputDialog.ShowDialog() == DialogResult.OK)
+                if (isOK)
                 {
-                    treeView1.Nodes.Add(inputDialog.Result);
+                    tv_main.Nodes.Add(node);
                 }
                 return;
             }
 
-            selectedNode.Nodes.Add("New Node");
+            if (isOK)
+            {
+                selectedNode.Nodes.Add(node);
+                selectedNode.Expand();
+            }
         }
 
         private void 노드삭제ToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var selectedNode = treeView1.SelectedNode;
+            var selectedNode = tv_main.SelectedNode;
             if (selectedNode == null)
             {
                 MessageBox.Show("선택된 노드가 없습니다.");
